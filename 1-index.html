@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MatchPoints</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<style>
+:root{--ink:#12241f;--muted:#64748b;--line:#e2e8e5;--bg:#f3f6f4;--acc:#0e5f4e;--acc2:#12805f;--gold:#d8b849;--goldink:#4a3a08;--cardsh:0 1px 3px rgba(16,24,40,.07),0 4px 14px rgba(16,24,40,.05)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+/* ---------- gate ---------- */
+#gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(1200px 600px at 70% -10%,#154f40,#0b2e26 60%,#08241e)}
+.gcard{background:#ffffff10;border:1px solid #ffffff22;backdrop-filter:blur(6px);border-radius:20px;padding:38px 36px;width:min(400px,92vw);text-align:center;color:#eaf4f0}
+.gcard .ball{font-size:38px}
+.gcard h1{margin:8px 0 2px;font-size:30px;letter-spacing:-.02em;color:#fff}
+.gcard p{margin:0 0 20px;color:#a7c4ba;font-size:14px}
+.gcard input{width:100%;border:1px solid #ffffff33;background:#ffffff14;color:#fff;border-radius:10px;padding:12px 14px;font-size:16px;text-align:center;outline:none}
+.gcard input:focus{border-color:#5eead4}
+.gcard input::placeholder{color:#7fa398}
+.gcard button{width:100%;margin-top:12px;background:linear-gradient(135deg,#10b981,#0d8a6a);border:0;color:#04241c;font-weight:800;font-size:15px;border-radius:10px;padding:12px}
+.gcard button:hover{filter:brightness(1.08)}
+#gErr{min-height:20px;color:#fca5a5;font-size:13px;margin-top:10px}
+/* ---------- app ---------- */
+#app{display:none}
+body.on #app{display:block}
+body.on #gate{display:none}
+.topbar{background:#0b2e26;color:#d9efe7;padding:14px 0}
+.topbar .in{max-width:1240px;margin:auto;padding:0 32px;display:flex;align-items:center;gap:12px}
+.topbar b{color:#fff;font-size:18px;letter-spacing:-.01em}
+.topbar .tag{font-size:12px;color:#8fd4bd;border:1px solid #2c6b5a;border-radius:99px;padding:3px 10px}
+.topbar button{margin-left:auto;background:#ffffff14;border:1px solid #ffffff2a;color:#cde9de;border-radius:8px;padding:6px 12px;font-size:12.5px}
+.wrap{max-width:1240px;margin:auto;padding:26px 32px 75px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 20px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:var(--cardsh)}
+.stat strong{display:block;font-size:24px;color:var(--acc);letter-spacing:-.02em}
+.stat span{font-size:12.5px;color:var(--muted);font-weight:600}
+.stat.gold{background:linear-gradient(135deg,#fdf8e7,#fbf3d0);border-color:#e8d89a}
+.stat.gold strong{color:var(--goldink)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--cardsh);margin-bottom:18px}
+.card h2{font-size:18px;margin:0 0 4px;color:#0b3d33}
+.card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=text],.toolbar input[type=date],.toolbar select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;font-size:14px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13.5px;color:var(--acc);box-shadow:var(--cardsh)}
+.btn:hover{background:#f6faf8}
+.btn.primary{background:var(--acc);color:#d1fae5;border-color:var(--acc)}
+.gridwrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:560px}
+table.grid{border-collapse:separate;border-spacing:0;min-width:100%}
+.grid th,.grid td{border-bottom:1px solid #edf1f6;border-left:1px solid #edf1f6;padding:4px 6px;font-size:13px;text-align:center;white-space:nowrap}
+.grid thead th{position:sticky;top:0;background:#f8fafc;z-index:3;font-size:11px;color:var(--muted);font-weight:700;padding:8px 6px}
+.grid th.name,.grid td.name{position:sticky;left:0;background:#fff;z-index:2;text-align:left;font-weight:600;color:#0b3d33;min-width:150px;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.grid thead th.name{background:#f8fafc;z-index:4}
+.grid td input{width:52px;border:1px solid transparent;background:transparent;text-align:center;font-size:13px;padding:4px 2px;border-radius:6px;color:var(--ink)}
+.grid td input:focus{border-color:var(--acc2);background:#fff;outline:none}
+.grid td input.filled{background:#ecfdf5;color:#0f766e;font-weight:700}
+.grid th.extra,.grid td.extra{background:#fdf8e7;font-weight:700}
+.grid th.tot,.grid td.tot{background:#f8fafc;font-weight:800;color:var(--acc)}
+.grid .rm{border:0;background:none;color:#b91c1c;font-size:12px;padding:0 4px;opacity:.55}
+.grid .rm:hover{opacity:1}
+.dlink{cursor:pointer;border-bottom:1px dashed #9fb4ad}
+.dlink:hover{color:var(--acc)}
+tr.lead td.name::after{content:' \1F451'}
+.lb{border-collapse:collapse;width:100%;max-width:560px}
+.lb th,.lb td{padding:9px 12px;border-bottom:1px solid #edf1f6;text-align:left;font-size:14px}
+.lb th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.lb td.pts{font-weight:800;color:var(--acc);font-size:16px}
+.lb .bar{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));display:inline-block;vertical-align:middle;margin-left:10px}
+.msg{font-size:13px;color:var(--goldink);min-height:18px}
+/* session modal */
+#ssWrap{position:fixed;inset:0;z-index:60;background:#0b1f1a99;display:grid;place-items:center}
+#ssWrap[hidden]{display:none!important}
+.sscard{background:#fff;border-radius:16px;padding:22px;width:min(520px,94vw);box-shadow:0 20px 60px #0005}
+.sscard h3{margin:0 0 12px;color:#0b3d33;font-size:17px}
+.sscard label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.08em}
+.sscard input,.sscard textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font:inherit;font-size:14px}
+.sscard textarea{min-height:80px;resize:vertical}
+.ssrow{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+@media(max-width:720px){.wrap{padding:16px}.topbar .in{padding:0 16px}}
+@media print{.toolbar,.rm,#ssWrap,.topbar button,.noprint{display:none!important}.card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}.gridwrap{max-height:none;overflow:visible}}
+</style></head><body>
+<div id="gate"><div class="gcard">
+ <div class="ball">⚽</div>
+ <h1>MatchPoints</h1>
+ <p>מעקב נקודות ותחרות חודשית · גישה עם סיסמה משותפת</p>
+ <input id="gPass" type="password" placeholder="סיסמה" aria-label="Password" autocomplete="current-password">
+ <button id="gGo" type="button">כניסה ←</button>
+ <div id="gErr"></div>
+</div></div>
+<div id="app">
+<div class="topbar"><div class="in"><b>⚽ MatchPoints</b><span class="tag">תחרות חודשית</span><button id="lock" type="button" class="noprint">↪ נעילה</button></div></div>
+<div class="wrap">
+<div class="stats" id="stats"></div>
+<div class="card">
+ <h2>Point tracking</h2>
+ <p class="hint">Click a cell and type the points for that day. Blank = not in session. The Extra column always counts toward the total. Click a day's date to log what the session covered.</p>
+ <div class="toolbar">
+  <input id="pName" type="text" placeholder="Player name" aria-label="Player name">
+  <button class="btn primary" id="pAdd" type="button">+ Player</button>
+  <span style="width:8px"></span>
+  <input id="dDate" type="date" aria-label="Session date">
+  <button class="btn primary" id="dAdd" type="button">+ Day</button>
+  <span style="width:8px"></span>
+  <button class="btn" id="impSquad" type="button">Import squad (xlsx/csv)</button>
+  <input id="impFile" type="file" accept=".xlsx,.csv" hidden>
+  <button class="btn" id="impGridBtn" type="button">Import workbook (xlsx)</button>
+  <input id="impGrid" type="file" accept=".xlsx" hidden>
+ </div>
+ <div class="gridwrap"><table class="grid" id="grid"></table></div>
+ <div class="msg" id="gMsg2"></div>
+</div>
+<div class="card">
+ <h2>Sum table - monthly competition</h2>
+ <p class="hint">Sorted by total points, Extra included. Pick a month or view everything.</p>
+ <div class="toolbar">
+  <select id="mSel" aria-label="Month"></select>
+  <button class="btn" id="xls" type="button">Export workbook (xlsx)</button>
+  <button class="btn" id="expJson" type="button">Export JSON</button>
+  <button class="btn" id="impJsonBtn" type="button">Import JSON</button>
+  <input id="impJson" type="file" accept=".json" hidden>
+  <button class="btn" id="prt" type="button">Print</button>
+ </div>
+ <div id="lb"></div>
+</div>
+</div></div>
+<div id="ssWrap" hidden><div class="sscard">
+ <h3 id="ssTitle">Session</h3>
+ <label>נושא האימון · Topic</label><input id="ssTopic" type="text" placeholder="e.g. Build-up under pressure">
+ <label>תרגילים · Drills</label><textarea id="ssDrills" placeholder="Rondo 4v4+2, wave game, finishing..."></textarea>
+ <label>הערות · Notes</label><textarea id="ssNotes" placeholder="Intensity, who stood out, follow-ups..."></textarea>
+ <div class="ssrow"><button class="btn" id="ssClose" type="button">Cancel</button><button class="btn primary" id="ssSave" type="button">Save</button></div>
+</div></div>
+<script>/* Minimal XLSX read/write - free, local, no external libraries.
+   write(): builds a real .xlsx (ZIP, stored entries) with inline strings.
+   read(): parses .xlsx via the central directory; inflates deflated entries
+   with DecompressionStream (Chrome/Edge/Safari 16.4+). */
+(function(){
+'use strict';
+/* ---------- CRC32 ---------- */
+var CT=null;
+function crc32(buf){if(!CT){CT=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CT[n]=c>>>0}}
+var c=0xFFFFFFFF;for(var i=0;i<buf.length;i++)c=CT[(c^buf[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function u16(v){return [v&255,(v>>>8)&255]}
+function u32(v){return [v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255]}
+function colName(i){var s='';i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-1-m)/26}return s}
+function xesc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var TDOStime=u16(0),TDOSdate=u16(((2026-1980)<<9)|(1<<5)|1);
+/* ---------- write ---------- */
+function sheetXml(rows){
+ var out=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>','<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'];
+ rows.forEach(function(r,ri){
+  out.push('<row r="'+(ri+1)+'">');
+  r.forEach(function(v,ci){
+   var ref=colName(ci)+(ri+1);
+   if(typeof v==='number'&&isFinite(v))out.push('<c r="'+ref+'"><v>'+v+'</v></c>');
+   else out.push('<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>')});
+  out.push('</row>')});
+ out.push('</sheetData></worksheet>');
+ return out.join('')}
+var FILES_EXTRA={
+ '[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>',
+ '_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+ 'xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'};
+function wbXml(name){return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+xesc(name||'Sheet1')+'" sheetId="1" r:id="rId1"/></sheets></workbook>'}
+function write(filename,rows,sheetName){
+ var enc=new TextEncoder();
+ var files=Object.assign({},FILES_EXTRA,{'xl/workbook.xml':wbXml(sheetName),'xl/worksheets/sheet1.xml':sheetXml(rows)});
+ var names=Object.keys(files),body=[],central=[],off=0;
+ names.forEach(function(n){
+  var data=enc.encode(files[n]),nm=enc.encode(n),crc=crc32(data);
+  var lh=[].concat([0x50,0x4b,3,4],u16(20),u16(0),u16(0),TDOStime,TDOSdate,u32(crc),u32(data.length),u32(data.length),u16(nm.length),u16(0));
+  body.push(new Uint8Array(lh),nm,data);
+  central.push({nm:nm,crc:crc,size:data.length,off:off});
+  off+=lh.length+nm.length+data.length});
+ var cd=[];
+ central.forEach(function(e){
+  var ch=[].concat([0x50,0x4b,1,2],u16(20),u16(20),u16(0),u16(0),TDOStime,TDOSdate,u32(e.crc),u32(e.size),u32(e.size),u16(e.nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(e.off));
+  cd.push(new Uint8Array(ch),e.nm)});
+ var cdSize=cd.reduce(function(a,b){return a+b.length},0);
+ var eocd=new Uint8Array([].concat([0x50,0x4b,5,6],u16(0),u16(0),u16(central.length),u16(central.length),u32(cdSize),u32(off),u16(0)));
+ var blob=new Blob(body.concat(cd).concat([eocd]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000)}
+/* ---------- read ---------- */
+function inflate(data){var ds=new DecompressionStream('deflate-raw');var stream=new Blob([data]).stream().pipeThrough(ds);return new Response(stream).arrayBuffer()}
+function readZip(buf){
+ var u8=new Uint8Array(buf),eocd=-1;
+ for(var i=u8.length-22;i>=Math.max(0,u8.length-65558);i--){if(u8[i]===0x50&&u8[i+1]===0x4b&&u8[i+2]===5&&u8[i+3]===6){eocd=i;break}}
+ if(eocd<0)throw Error('Not an Excel file');
+ var dv=new DataView(buf),n=dv.getUint16(eocd+10,true),cdOff=dv.getUint32(eocd+16,true),entries={},p=cdOff;
+ for(var e=0;e<n;e++){
+  if(dv.getUint32(p,true)!==0x02014b50)break;
+  var method=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);
+  var name=new TextDecoder().decode(u8.slice(p+46,p+46+nl));
+  var lnl=dv.getUint16(lo+26,true),lel=dv.getUint16(lo+28,true);
+  var data=u8.slice(lo+30+lnl+lel,lo+30+lnl+lel+csz);
+  entries[name]={method:method,data:data};
+  p+=46+nl+el+cl}
+ return entries}
+function cellText(c,shared,ns){
+ var t=c.getAttribute('t');
+ if(t==='inlineStr'){var is=c.getElementsByTagName('t');return is.length?is[0].textContent:''}
+ var v=c.getElementsByTagName('v');if(!v.length)return '';
+ var val=v[0].textContent;
+ if(t==='s')return shared[+val]||'';
+ return val}
+function read(file){return file.arrayBuffer().then(function(buf){
+ var entries=readZip(buf);
+ function getXml(n){var e=entries[n];if(!e)return Promise.resolve(null);
+  var p=e.method===8?inflate(e.data):Promise.resolve(e.data.buffer.slice(e.data.byteOffset,e.data.byteOffset+e.data.byteLength));
+  return p.then(function(b){return new DOMParser().parseFromString(new TextDecoder().decode(b),'application/xml')})}
+ return getXml('xl/sharedStrings.xml').then(function(sdoc){
+  var shared=[];
+  if(sdoc){var si=sdoc.getElementsByTagName('si');for(var i=0;i<si.length;i++)shared.push(si[i].textContent)}
+  return getXml('xl/worksheets/sheet1.xml').then(function(doc){
+   if(!doc||doc.getElementsByTagName('parsererror').length)throw Error('Could not parse the sheet');
+   var rows=[],rws=doc.getElementsByTagName('row');
+   for(var r=0;r<rws.length;r++){
+    var cells=rws[r].getElementsByTagName('c'),row=[];
+    for(var c=0;c<cells.length;c++){
+     var ref=cells[c].getAttribute('r')||'',ci=0;
+     for(var k=0;k<ref.length&&ref[k]>='A'&&ref[k]<='Z';k++)ci=ci*26+(ref.charCodeAt(k)-64);
+     ci=ci-1;while(row.length<ci)row.push('');
+     row.push(cellText(cells[c],shared))}
+    rows.push(row)}
+   return rows})})})}
+window.XLSXLite={write:write,read:read};
+})();
+</script>
+<script>
+/* ---------- encrypted seed + gate ---------- */
+var SEED_B64="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";
+async function deriveKey(pw,salt){var enc=new TextEncoder();
+ var km=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt'])}
+function b64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+async function unlock(pw){var raw=b64(SEED_B64),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
+ var key=await deriveKey(pw,salt);
+ var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:iv},key,ct);
+ return JSON.parse(new TextDecoder().decode(pt))}
+function boot(seed){
+ if(!localStorage.getItem('matchpoints-v1')&&seed)localStorage.setItem('matchpoints-v1',JSON.stringify(seed));
+ document.body.classList.add('on');
+ var s=document.createElement('script');s.textContent=APP_JS;document.body.appendChild(s)}
+async function tryGo(){var pw=document.getElementById('gPass').value;
+ if(!pw)return;
+ try{var seed=await unlock(pw);
+  sessionStorage.setItem('mp-on',pw);
+  boot(seed)}catch(e){document.getElementById('gErr').textContent='סיסמה שגויה · wrong password'}}
+document.getElementById('gGo').onclick=tryGo;
+document.getElementById('gPass').addEventListener('keydown',function(e){if(e.key==='Enter')tryGo()});
+document.getElementById('lock').onclick=function(){sessionStorage.removeItem('mp-on');location.reload()};
+(function(){var pw=sessionStorage.getItem('mp-on');if(!pw)return;
+ unlock(pw).then(function(seed){boot(seed)}).catch(function(){sessionStorage.removeItem('mp-on')})})();
+</script>
+<script>var APP_JS="\n(function(){\nvar $=function(id){return document.getElementById(id)};\nvar esc=function(s){return String(s==null?'':s).replace(/[&<>\"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})};\nvar LSK='matchpoints-v1';\nvar S;\nfunction blank(){return {players:[],cols:[],cells:{},extra:{},sess:{}}}\ntry{S=JSON.parse(localStorage.getItem(LSK)||'null');if(!S||!Array.isArray(S.players)||!Array.isArray(S.cols))S=blank();if(!S.sess)S.sess={}}catch(e){S=blank()}\n\nfunction save(){try{localStorage.setItem(LSK,JSON.stringify(S))}catch(e){$('gMsg2').textContent='Storage full - export JSON to back up.'}}\nvar nid=100;\nfunction uid(){return 'x'+(++nid)+Date.now().toString(36)}\nfunction total(p,month){var t=+(S.extra[p.id]||0);\n S.cols.forEach(function(c){if(month&&!(c.date||'').startsWith(month))return;t+=+((S.cells[p.id]||{})[c.id]||0)});\n return t}\nfunction ddmm(d){var p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]:d}\nfunction monthKey(d){return (d||'').slice(0,7)}\n/* ---------- stats ---------- */\nfunction renderStats(){var pts=0;S.players.forEach(function(p){pts+=total(p,null)});\n var lead=null,lt=-1;S.players.forEach(function(p){var t=total(p,null);if(t>lt){lt=t;lead=p}});\n $('stats').innerHTML='<div class=\"stat\"><strong>'+S.players.length+'</strong><span>players</span></div><div class=\"stat\"><strong>'+S.cols.length+'</strong><span>session days</span></div><div class=\"stat\"><strong>'+pts+'</strong><span>points awarded</span></div><div class=\"stat gold\"><strong>'+(lead&&lt>0?esc(lead.name):'—')+'</strong><span>competition leader</span></div>'}\n/* ---------- grid ---------- */\nfunction renderGrid(){\n if(!S.players.length){$('grid').innerHTML='<tbody><tr><td style=\"padding:30px;text-align:center;color:var(--muted)\">No players yet - add names above or import the squad. Then add a training day and start entering points.</td></tr></tbody>';return}\n var h='<thead><tr><th class=\"name\">Name</th>';\n S.cols.forEach(function(c){var has=S.sess[c.id]&&(S.sess[c.id].topic||S.sess[c.id].drills||S.sess[c.id].notes);h+='<th><span class=\"dlink\" data-sess=\"'+c.id+'\" title=\"Session content\">'+ddmm(c.date)+(has?' ◆':'')+'</span> <button class=\"rm noprint\" data-col=\"'+c.id+'\" title=\"Remove day\">×</button></th>'});\n h+='<th class=\"extra\">Extra</th><th class=\"tot\">Total</th></tr></thead><tbody>';\n var sorted=S.players.slice().sort(function(a,b){return total(b,null)-total(a,null)||a.name.localeCompare(b.name)});\n var leadId=lt0();function lt0(){var m=-1,id=null;sorted.forEach(function(p){var t=total(p,null);if(t>m){m=t;id=p.id}});return m>0?id:null}\n sorted.forEach(function(p){var cells=S.cells[p.id]||{};\n  h+='<tr'+(p.id===leadId?' class=\"lead\"':'')+'><td class=\"name\">'+esc(p.name)+' <button class=\"rm noprint\" data-pl=\"'+p.id+'\" title=\"Remove player\">×</button></td>';\n  S.cols.forEach(function(c){var v=cells[c.id];h+='<td><input type=\"number\" min=\"0\" max=\"99\" data-p=\"'+p.id+'\" data-c=\"'+c.id+'\" value=\"'+(v==null?'':v)+'\"'+(v>0?' class=\"filled\"':'')+'></td>'});\n  h+='<td class=\"extra\"><input type=\"number\" min=\"0\" max=\"99\" data-x=\"'+p.id+'\" value=\"'+(S.extra[p.id]||'')+'\"'+(S.extra[p.id]>0?' class=\"filled\"':'')+'></td>';\n  h+='<td class=\"tot\">'+total(p,null)+'</td></tr>'});\n $('grid').innerHTML=h+'</tbody>';\n $('grid').querySelectorAll('input[type=number]').forEach(function(inp){inp.onchange=function(){\n  var v=inp.value===''?null:Math.max(0,Math.min(99,Math.round(+inp.value||0)));\n  if(inp.dataset.x){if(v==null)delete S.extra[inp.dataset.x];else S.extra[inp.dataset.x]=v}\n  else{var cells=S.cells[inp.dataset.p]||(S.cells[inp.dataset.p]={});if(v==null)delete cells[inp.dataset.c];else cells[inp.dataset.c]=v}\n  save();renderStats();renderGrid();renderLb()}});\n $('grid').querySelectorAll('[data-col]').forEach(function(b){b.onclick=function(){\n  var c=S.cols.find(function(x){return x.id===b.dataset.col});\n  if(!confirm('Remove the '+ddmm(c.date)+' column and its points?'))return;\n  S.cols=S.cols.filter(function(x){return x.id!==b.dataset.col});\n  Object.keys(S.cells).forEach(function(pid){delete S.cells[pid][b.dataset.col]});\n  save();renderStats();renderGrid();renderLb();renderMonths()}});\n $('grid').querySelectorAll('[data-sess]').forEach(function(b){b.onclick=function(){openSess(b.getAttribute('data-sess'))}});\n $('grid').querySelectorAll('[data-pl]').forEach(function(b){b.onclick=function(){\n  var p=S.players.find(function(x){return x.id===b.dataset.pl});\n  if(!confirm('Remove '+p.name+' and all their points?'))return;\n  S.players=S.players.filter(function(x){return x.id!==b.dataset.pl});\n  delete S.cells[b.dataset.pl];delete S.extra[b.dataset.pl];\n  save();renderStats();renderGrid();renderLb()}})}\n/* ---------- summary ---------- */\nfunction months(){var s={};S.cols.forEach(function(c){if(c.date)s[monthKey(c.date)]=1});return Object.keys(s).sort().reverse()}\nfunction renderMonths(){var cur=$('mSel').value||'';\n var opts=months();\n $('mSel').innerHTML='<option value=\"\">All days</option>'+opts.map(function(m){var d=new Date(m+'-02');return '<option value=\"'+m+'\"'+(m===cur?' selected':'')+'>'+d.toLocaleDateString('en-GB',{month:'long',year:'numeric'})+'</option>'}).join('')}\nfunction renderLb(){var m=$('mSel').value||null;\n if(!S.players.length){$('lb').innerHTML='<div class=\"empty\">The competition table fills in as you add players and points.</div>';return}\n var rows=S.players.map(function(p){return {n:p.name,t:total(p,m)}}).sort(function(a,b){return b.t-a.t||a.n.localeCompare(b.n)});\n var max=Math.max.apply(null,rows.map(function(r){return r.t}).concat([1]));\n $('lb').innerHTML='<table class=\"lb\"><thead><tr><th>#</th><th>Player</th><th>Points</th></tr></thead><tbody>'+rows.map(function(r,i){\n  var medal=i===0&&r.t>0?'🥇':i===1&&r.t>0?'🥈':i===2&&r.t>0?'🥉':(i+1);\n  return '<tr><td>'+medal+'</td><td>'+esc(r.n)+'</td><td class=\"pts\">'+r.t+'<span class=\"bar\" style=\"width:'+Math.round(r.t/max*140)+'px\"></span></td></tr>'}).join('')+'</tbody></table>'}\n/* ---------- actions ---------- */\n$('pAdd').onclick=function(){var n=$('pName').value.trim();if(!n)return;\n if(S.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){$('gMsg2').textContent='That player is already in the list.';return}\n S.players.push({id:uid(),name:n});$('pName').value='';save();renderStats();renderGrid();renderLb()};\n$('pName').addEventListener('keydown',function(e){if(e.key==='Enter')$('pAdd').click()});\n$('dAdd').onclick=function(){var d=$('dDate').value;if(!d){$('gMsg2').textContent='Pick a date first.';return}\n if(S.cols.some(function(c){return c.date===d})){$('gMsg2').textContent='That day already has a column.';return}\n S.cols.push({id:uid(),date:d});S.cols.sort(function(a,b){return a.date<b.date?-1:1});\n save();renderStats();renderGrid();renderLb();renderMonths()};\n$('dDate').value=new Date().toISOString().slice(0,10);\n$('mSel').onchange=renderLb;\n$('prt').onclick=function(){window.print()};\n/* squad import (first column of any sheet/csv) */\n$('impSquad').onclick=function(){$('impFile').click()};\n$('impFile').onchange=function(e){var f=e.target.files[0];e.target.value='';if(!f)return;\n var done=function(names){var skip=/^\\s*(name|player|שחקן)?\\s*$/i;var added=0;\n  names.forEach(function(n){n=String(n||'').trim();if(!n||skip.test(n))return;\n   if(!S.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){S.players.push({id:uid(),name:n});added++}});\n  save();renderStats();renderGrid();renderLb();$('gMsg2').textContent=added+' players added.'};\n if(/\\.csv$/i.test(f.name))f.text().then(function(t){done(t.split(/\\r?\\n/).map(function(l){return l.split(',')[0]}))});\n else XLSXLite.read(f).then(function(rows){done(rows.map(function(r){return r[0]}))}).catch(function(){$('gMsg2').textContent='Could not read that file.'})};\n/* full workbook import - same layout as the Point Tracking sheet: Name | date headers... | Extra */\n$('impGridBtn').onclick=function(){$('impGrid').click()};\n$('impGrid').onchange=function(e){var f=e.target.files[0];e.target.value='';if(!f)return;\n XLSXLite.read(f).then(function(rows){\n  if(!rows||rows.length<2){$('gMsg2').textContent='That workbook looks empty.';return}\n  var hdr=rows[0].map(function(x){return String(x==null?'':x).trim()});\n  var extraIx=hdr.findIndex(function(h){return /^extra$/i.test(h)});\n  var colMap=[];\n  hdr.forEach(function(h,ix){if(ix===0||ix===extraIx)return;\n   var iso=null;\n   var m=h.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})/);if(m)iso=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');\n   m=h.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m)iso=m[1]+'-'+m[2]+'-'+m[3];\n   if(!iso&&/^\\d{5}(\\.\\d+)?$/.test(h)){var sn=+h;if(sn>40000&&sn<60000)iso=new Date(Date.UTC(1899,11,30)+sn*864e5).toISOString().slice(0,10)}\n   if(iso)colMap.push({ix:ix,date:iso})});\n  if(!colMap.length){$('gMsg2').textContent='No date columns found in the first row.';return}\n  var nP=0;\n  rows.slice(1).forEach(function(r){\n   var name=String(r[0]||'').trim();if(!name)return;\n   var p=S.players.find(function(x){return x.name.toLowerCase()===name.toLowerCase()});\n   if(!p){p={id:uid(),name:name};S.players.push(p);nP++}\n   colMap.forEach(function(cm){\n    var c=S.cols.find(function(x){return x.date===cm.date});\n    if(!c){c={id:uid(),date:cm.date};S.cols.push(c)}\n    var v=+r[cm.ix];if(v>0){(S.cells[p.id]=S.cells[p.id]||{})[c.id]=v}});\n   if(extraIx>0){var ex=+r[extraIx];if(ex>0)S.extra[p.id]=ex}});\n  S.cols.sort(function(a,b){return a.date<b.date?-1:1});\n  save();renderStats();renderGrid();renderLb();renderMonths();\n  $('gMsg2').textContent='Workbook imported - '+nP+' new players, '+colMap.length+' day columns.'}).catch(function(){$('gMsg2').textContent='Could not read that file.'})};\n/* xlsx export - mirrors the workbook: Point Tracking sheet + Sum Table */\n$('xls').onclick=function(){\n var hdr=['Name'].concat(S.cols.map(function(c){return ddmm(c.date)+'/'+c.date.slice(0,4)})).concat(['Extra']);\n var rows=[hdr];\n S.players.forEach(function(p){var cells=S.cells[p.id]||{};\n  rows.push([p.name].concat(S.cols.map(function(c){return cells[c.id]||''})).concat([S.extra[p.id]||'']))});\n XLSXLite.write('matchpoints.xlsx',rows,'Point Tracking');\n var sum=[['Player','Sum']].concat(S.players.map(function(p){return [p.name,total(p,null)]}).sort(function(a,b){return b[1]-a[1]}));\n setTimeout(function(){XLSXLite.write('matchpoints-sum.xlsx',sum,'Sum Table')},500);\n var sess=[['Date','Topic','Drills','Notes']];S.cols.forEach(function(c){var d=S.sess[c.id];if(d)sess.push([c.date,d.topic||'',d.drills||'',d.notes||''])});\n if(sess.length>1)setTimeout(function(){XLSXLite.write('matchpoints-sessions.xlsx',sess,'Sessions')},1000)};\n/* json export/import */\n$('expJson').onclick=function(){var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});\n var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='matchpoints-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};\n$('impJsonBtn').onclick=function(){$('impJson').click()};\n$('impJson').onchange=function(e){var f=e.target.files[0];e.target.value='';if(!f)return;\n f.text().then(function(t){var d=JSON.parse(t);\n  if(!d||!Array.isArray(d.players)||!Array.isArray(d.cols))throw 0;if(!d.sess)d.sess={};\n  S=d;save();renderStats();renderGrid();renderLb();renderMonths();$('gMsg2').textContent='Backup imported.'}).catch(function(){$('gMsg2').textContent='That JSON backup could not be read.'})};\n/* ---------- session content per day ---------- */\nvar sessCol=null;\nfunction openSess(cid){sessCol=cid;var c=S.cols.find(function(x){return x.id===cid});if(!c)return;\n var d=S.sess[cid]||{};\n $('ssTitle').textContent='Session - '+ddmm(c.date)+'/'+c.date.slice(0,4);\n $('ssTopic').value=d.topic||'';$('ssDrills').value=d.drills||'';$('ssNotes').value=d.notes||'';\n $('ssWrap').hidden=false}\n$('ssClose').onclick=function(){$('ssWrap').hidden=true};\n$('ssSave').onclick=function(){if(!sessCol)return;\n var d={topic:$('ssTopic').value.trim(),drills:$('ssDrills').value.trim(),notes:$('ssNotes').value.trim()};\n if(d.topic||d.drills||d.notes)S.sess[sessCol]=d;else delete S.sess[sessCol];\n save();renderGrid();$('ssWrap').hidden=true};\n$('ssWrap').addEventListener('click',function(e){if(e.target===$('ssWrap'))$('ssWrap').hidden=true});\nrenderMonths();renderStats();renderGrid();renderLb();\n})();\n";</script>
+</body></html>
